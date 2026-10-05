@@ -1,109 +1,46 @@
-﻿from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import List, Optional
+﻿import json
 
-app = FastAPI()
+def load_items(filename):
+    """Загружает товары из JSON-файла."""
+    with open(filename, "r", encoding="utf-8") as f:
+        return json.load(f)
 
-class Item(BaseModel):
-    id: int
-    name: str
-    price: float
-    tags: Optional[List[str]] = None
+def calculate_total(items):
+    """Считает общую сумму бюджета."""
+    return sum(item["price"] for item in items)
 
-items_db: List[Item] = [
-    Item(id=1, name="Кружка", price=490.0, tags=["посуда", "подарок"]),
-    Item(id=2, name="Ноутбук", price=75000.0, tags=["электроника", "работа"]),
-        Item(id=3, name="Кроссовки", price=9990.0, tags=["обувь", "спорт"]),
-]
+def add_shares(items, total):
+    """Добавляет долю в процентах к каждому товару."""
+    for item in items:
+        item["share"] = (item["price"] / total) * 100
+    return items
 
-@app.get("/")
-def read_root():
-    return {"message": "Привет, бэкенд!", "status": "ok"}
+def sort_by_price_desc(items):
+    """Сортирует товары по убыванию цены."""
+    return sorted(items, key=lambda x: x["price"], reverse=True)
 
-@app.get("/items")
-def get_items(min_price: Optional[float] = None, max_price: Optional[float] = None):
-    result = items_db
-    if min_price is not None:
-        result = [i for i in result if i.price >= min_price]
-    if max_price is not None:
-        result = [i for i in result if i.price <= max_price]
-    return result
+def print_report(items, total):
+    """Выводит красивый отчёт в консоль."""
+    print(f"Всего позиций: {len(items)}, общий бюджет: {total:.0f} руб.\n")
+    print("--- Вклад каждого товара в бюджет (от дорогого к дешёвому) ---")
 
-@app.get("/items/{item_id}")
-def get_item(item_id: int):
-    for item in items_db:
-        if item.id == item_id:
-            return item
-    raise HTTPException(status_code=404, detail="Товар не найден")
+    # Находим максимальную длину названия, чтобы колонки стояли ровно
+    max_name_len = max(len(item["name"]) for item in items) if items else 20
 
-@app.post("/items")
-def add_item(item: Item):
-    if any(i.id == item.id for i in items_db):
-        raise HTTPException(status_code=400, detail="ID уже существует")
-    items_db.append(item)
-    return item
+    for item in items:
+        # {:<max_name_len} — название прижато влево и занимает ровно max_name_len символов
+        print(
+            f"{item['name']:<{max_name_len}} "
+            f"{item['price']:7.0f} руб. — {item['share']:5.1f}%"
+        )
 
-@app.get("/items/stats")
-def get_items_stats():
-    if not items_db:
-        return {
-            "count": 0,
-            "average_price": 0.0,
-            "min_price": None,
-            "max_price": None
-        }
+def main():
+    filename = "items.json"
+    items = load_items(filename)
+    total = calculate_total(items)
+    items_with_shares = add_shares(items, total)
+    sorted_items = sort_by_price_desc(items_with_shares)
+    print_report(sorted_items, total)
 
-    prices = [item.price for item in items_db]
-    return {
-        "count": len(items_db),
-        "average_price": sum(prices) / len(prices),
-        "min_price": min(prices),
-        "max_price": max(prices)
-    }
-    Item(id=3, name="Кроссовки", price=9990.0, tags=["обувь", "спорт"]),
-]
-
-@app.get("/")
-def read_root():
-    return {"message": "Привет, бэкенд!", "status": "ok"}
-
-@app.get("/items")
-def get_items(min_price: Optional[float] = None, max_price: Optional[float] = None):
-    result = items_db
-    if min_price is not None:
-        result = [i for i in result if i.price >= min_price]
-    if max_price is not None:
-        result = [i for i in result if i.price <= max_price]
-    return result
-
-@app.get("/items/{item_id}")
-def get_item(item_id: int):
-    for item in items_db:
-        if item.id == item_id:
-            return item
-    raise HTTPException(status_code=404, detail="Товар не найден")
-
-@app.post("/items")
-def add_item(item: Item):
-    if any(i.id == item.id for i in items_db):
-        raise HTTPException(status_code=400, detail="ID уже существует")
-    items_db.append(item)
-    return item
-
-@app.get("/items/stats")
-def get_items_stats():
-    if not items_db:
-        return {
-            "count": 0,
-            "average_price": 0.0,
-            "min_price": None,
-            "max_price": None
-        }
-
-    prices = [item.price for item in items_db]
-    return {
-        "count": len(items_db),
-        "average_price": sum(prices) / len(prices),
-        "min_price": min(prices),
-        "max_price": max(prices)
-    }
+if __name__ == "__main__":
+    main()
