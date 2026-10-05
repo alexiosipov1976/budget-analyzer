@@ -30,3 +30,5 @@
 - `feat: added share calculation and auto-detection of most expensive item`
 - `feat: added summary line with total items and budget amount`
 - `refactor: split logic into functions, add JSON loading, improve formatting`
+
+![Пример вывода отчёта](screenshot.png)
