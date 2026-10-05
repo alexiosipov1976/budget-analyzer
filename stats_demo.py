@@ -50,3 +50,21 @@ print(f"Самый дорогой товар: {max_name} за {max_price:.0f} р
 cheap_total = overall["total_price"] - max_price
 cheap_share = (cheap_total / overall["total_price"]) * 100
 print(f"На остальные товары ушло {cheap_total:.0f} руб. — это {cheap_share:.1f}% бюджета.")
+
+print("\n--- Вклад каждого товара в бюджет ---")
+# Сначала найдём самую длинную длину названия — чтобы под неё сделать ширину столбца
+max_name_len = max(len(item["name"]) for item in items)
+
+for item in items:
+    share = (item["price"] / overall["total_price"]) * 100
+    # {:<max_name_len} — имя займёт ровно max_name_len символов и будет прижато влево
+    print(f"{item['name']:<{max_name_len}} {item['price']:7.0f} руб. — {share:5.1f}%")
+
+sorted_items = sorted(items, key=lambda x: x["price"], reverse=True)
+
+print("\n--- Вклад каждого товара в бюджет (от дорогого к дешёвому) ---")
+for item in sorted_items:
+    share = (item["price"] / overall["total_price"]) * 100
+    print(f"{item['name']:20} {item['price']:7.0f} руб. — {share:5.1f}%")
+
+print(f"Всего позиций: {len(items)}, общий бюджет: {overall['total_price']:.0f} руб.\n")
